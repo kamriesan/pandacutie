@@ -45,14 +45,16 @@ class DataFrameViewer(QMainWindow):
         # Stylesheet for a formal blue appearance
         stylesheet = """
             QHeaderView::section {
-                padding: 5px;
+                background-color: #ffffff;
+                color: black;
+                padding: 6px;
                 border: 0px solid #dcdcdc;
             }
         """
         self.setStyleSheet(stylesheet)
 
         # Create a standard item model
-        model = QStandardItemModel(self.df.shape[0], self.df.shape[1] + 1)  # Adjusted for the index column
+        model = QStandardItemModel(self.df.shape[0], self.df.shape[1])  # Adjusted for the index column
 
         # Set column headers, including the index header
         model.setHorizontalHeaderItem(0, QStandardItem())
@@ -68,9 +70,9 @@ class DataFrameViewer(QMainWindow):
                 item = QStandardItem(str(self.df.iat[row_idx, col_idx]))
                 # Set a background color for every other row
                 if row_idx % 2 == 0:
-                    item.setBackground(QColor('#E6E6E6'))  # darkey gray background
+                    item.setBackground(QColor('#F6F6F6'))  # darkey gray background
                 elif row_idx % 2 == 1:
-                    item.setBackground(QColor('#F6F6F6'))  # lighter gray background
+                    item.setBackground(QColor('#E6E6E6'))  # lighter gray background
                 model.setItem(row_idx, col_idx + 1, item)
 
         # Create a tree view and set the model
