@@ -1,37 +1,50 @@
 import csv
-import sys
+import re
+import phonenumbers
 import pandas as pd
+
+# GUI
+import sys
 from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeView
 from PyQt5.QtGui import QStandardItemModel, QStandardItem
 from PyQt5.QtGui import QFont, QColor  # Import QFont and QColor
 
+# Validations
+name_regex = re.compile(r'^[A-Za-z\s]+$')
+birthday_regex = re.compile(r'^(0[1-9]|1[0-2])/(0[1-9]|1[0-9]|2[0-9]|3[01])/(\d{2})$')
+email_regex = re.compile(r'([A-Za-z0-9]+[.-_])*[A-Za-z0-9]+@[A-Za-z0-9-]+(\.[A-Z|a-z]{2,})+')
+phone_regex = re.compile(r'^\d{4}\s\d{3}\s\d{4}$')  
+
+people = []
+person = {}
+
 # Read the data from the CSV file
-names, birthdays, phones, emails = [], [], [], []
 with open('data.csv', 'r') as file:
     csv_reader = csv.reader(file)
+    
     for row in csv_reader:
-        if '@' in row[0]:
-            current_category = "Email"
-            emails.append(row[0])
-        elif '/' in row[0]:
-            current_category = "Birthday"
-            birthdays.append(row[0])
-        elif any(char.isdigit() for char in row[0]):
-            current_category = "Phone"
-            phones.append(row[0])
-        else:
-            current_category = "Name"
-            names.append(row[0])
+        if re.fullmatch(name_regex, row[0]):
+            # If we're starting a new person and there's a previous person, append them to the people list
+            if person:
+                people.append(person)
+            # Start a new person dictionary
+            person = {"Name": row[0]}  
+        elif re.fullmatch(birthday_regex, row[0]):
+            person["Birthday"] = row[0]
+        elif re.fullmatch(phone_regex, row[0]) and phonenumbers.is_valid_number(phonenumbers.parse(row[0], "PH")):
+            person["Phone"] = row[0]
+        elif re.fullmatch(email_regex, row[0]):
+            person["Email"] = row[0]
+    # Append the last person if they haven't been appended yet
+    if person:
+        people.append(person)
 
-data = {
-    "Name": names,
-    "Birthday": birthdays,
-    "Phone": phones,
-    "Email": emails
-}
+df = pd.DataFrame(people)
 
-df = pd.DataFrame(data)
+# Fill NaN values for Email
+df['Email'] = df['Email'].fillna('N/A')
 
+# GUI 
 class DataFrameViewer(QMainWindow):
     def __init__(self, df):
         super().__init__()
