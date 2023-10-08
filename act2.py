@@ -35,6 +35,7 @@ with open('data.csv', 'r') as file:
             person["Phone"] = row[0]
         elif re.fullmatch(email_regex, row[0]):
             person["Email"] = row[0]
+
     # Append the last person if they haven't been appended yet
     if person:
         people.append(person)
