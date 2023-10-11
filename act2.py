@@ -42,8 +42,10 @@ with open('data.csv', 'r') as file:
 
 df = pd.DataFrame(people)
 
-# Fill NaN values for Email
+# Fill NaN values for Email, Phone, Birthday
 df['Email'] = df['Email'].fillna('N/A')
+df['Phone'] = df['Phone'].fillna('N/A')
+df['Birthday'] = df['Birthday'].fillna('N/A')
 
 # GUI 
 class DataFrameViewer(QMainWindow):
