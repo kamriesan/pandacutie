@@ -5,9 +5,8 @@ import pandas as pd
 
 # GUI
 import sys
-from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeView
-from PyQt5.QtGui import QStandardItemModel, QStandardItem
-from PyQt5.QtGui import QFont, QColor  # Import QFont and QColor
+from PyQt5.QtWidgets import QApplication, QMainWindow, QTreeView, QLineEdit, QVBoxLayout, QWidget
+from PyQt5.QtGui import QStandardItemModel, QStandardItem, QFont, QColor
 
 # Validations
 name_regex = re.compile(r'^[A-Za-z\s]+$')
@@ -47,7 +46,7 @@ df['Email'] = df['Email'].fillna('N/A')
 df['Phone'] = df['Phone'].fillna('N/A')
 df['Birthday'] = df['Birthday'].fillna('N/A')
 
-# GUI 
+# Create the main GUI window
 class DataFrameViewer(QMainWindow):
     def __init__(self, df):
         super().__init__()
@@ -58,7 +57,7 @@ class DataFrameViewer(QMainWindow):
         self.setWindowTitle('Joelflix Employees Database')
         self.setGeometry(500, 100, 850, 840)
 
-        # Stylesheet for a formal blue appearance
+        # Stylesheet
         stylesheet = """
             QHeaderView::section {
                 background-color: #ffffff;
@@ -70,33 +69,73 @@ class DataFrameViewer(QMainWindow):
         self.setStyleSheet(stylesheet)
 
         # Create a standard item model
-        model = QStandardItemModel(self.df.shape[0], self.df.shape[1])  # Adjusted for the index column
+        self.model = QStandardItemModel(self.df.shape[0], self.df.shape[1])
 
-        # Set column headers, including the index header
-        model.setHorizontalHeaderItem(0, QStandardItem())
+        # Set column headers
+        self.model.setHorizontalHeaderItem(0, QStandardItem())
         for col_idx, header in enumerate(self.df.columns):
             header_item = QStandardItem(header)
-            header_item.setFont(QFont("Inter", 9, QFont.Bold))  # Set font to Inter and bold
-            model.setHorizontalHeaderItem(col_idx + 1, header_item)
-        
+            header_item.setFont(QFont("Inter", 9, QFont.Bold))
+            self.model.setHorizontalHeaderItem(col_idx + 1, header_item)
+
         # Populate the model with DataFrame values
         for row_idx in range(self.df.shape[0]):
-            model.setItem(row_idx, 0, QStandardItem(str(row_idx + 1)))  # Set the index starting from 1
+            self.model.setItem(row_idx, 0, QStandardItem(str(row_idx + 1)))
             for col_idx in range(self.df.shape[1]):
                 item = QStandardItem(str(self.df.iat[row_idx, col_idx]))
-                # Set a background color for every other row
                 if row_idx % 2 == 0:
-                    item.setBackground(QColor('#F6F6F6'))  # darkey gray background
+                    item.setBackground(QColor('#F6F6F6'))
                 elif row_idx % 2 == 1:
-                    item.setBackground(QColor('#E6E6E6'))  # lighter gray background
-                model.setItem(row_idx, col_idx + 1, item)
+                    item.setBackground(QColor('#E6E6E6'))
+                self.model.setItem(row_idx, col_idx + 1, item)
 
         # Create a tree view and set the model
-        tree_view = QTreeView(self)
-        tree_view.setModel(model)
-        tree_view.resizeColumnToContents(0)  # Adjust the column index accordingly
-        tree_view.setColumnWidth(1, 200)
-        self.setCentralWidget(tree_view)
+        self.tree_view = QTreeView(self)
+        self.tree_view.setModel(self.model)
+        self.tree_view.resizeColumnToContents(0)
+        self.tree_view.setColumnWidth(1, 200)
+
+        # Create a search bar
+        self.search_bar = QLineEdit(self)
+        self.search_bar.setPlaceholderText("Search...")
+        self.search_bar.textChanged.connect(self.filter_data)
+
+        # Create a layout for the search bar and tree view
+        layout = QVBoxLayout()
+        layout.addWidget(self.search_bar)
+        layout.addWidget(self.tree_view)
+
+        # Create a central widget to hold the layout
+        central_widget = QWidget()
+        central_widget.setLayout(layout)
+        self.setCentralWidget(central_widget)
+
+    def filter_data(self):
+        search_text = self.search_bar.text().strip()
+        if search_text:
+            filtered_df = self.df[self.df.apply(lambda row: any(search_text in str(cell) for cell in row), axis=1)]
+            self.update_model(filtered_df)
+        else:
+            self.update_model(self.df)
+
+    def update_model(self, new_df):
+        self.model.clear()
+        self.model.setColumnCount(new_df.shape[1] + 1)
+        self.model.setHorizontalHeaderItem(0, QStandardItem())
+        for col_idx, header in enumerate(new_df.columns):
+            header_item = QStandardItem(header)
+            header_item.setFont(QFont("Inter", 9, QFont.Bold))
+            self.model.setHorizontalHeaderItem(col_idx + 1, header_item)
+
+        for row_idx in range(new_df.shape[0]):
+            self.model.setItem(row_idx, 0, QStandardItem(str(row_idx + 1)))
+            for col_idx in range(new_df.shape[1]):
+                item = QStandardItem(str(new_df.iat[row_idx, col_idx]))
+                if row_idx % 2 == 0:
+                    item.setBackground(QColor('#F6F6F6'))
+                elif row_idx % 2 == 1:
+                    item.setBackground(QColor('#E6E6E6'))
+                self.model.setItem(row_idx, col_idx + 1, item)
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
